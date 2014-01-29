@@ -1,9 +1,12 @@
 package kba.gui.editor;
 
+import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import unicode.UCC_BlockElements;
 import unicode.UCC_GeometricShapes;
@@ -19,7 +22,8 @@ public enum CharPalette {
 			UCC_MiscellaneousSymbols.WHITE_SPADE_SUIT,
 			UCC_MiscellaneousSymbols.WHITE_HEART_SUIT,
 			UCC_MiscellaneousSymbols.WHITE_CLUB_SUIT,
-			UCC_MiscellaneousSymbols.WHITE_DIAMOND_SUIT
+			UCC_MiscellaneousSymbols.WHITE_DIAMOND_SUIT, 
+			"\uD83C\uDCA1".charAt(0)
 			),
 	// ♝♚♞♟♛♜♗♔♘♙♕♖
 	CHESS(
@@ -51,13 +55,20 @@ public enum CharPalette {
 			UCC_GeometricShapes.BLACK_LEFT_POINTING_TRIANGLE,
 			UCC_GeometricShapes.BLACK_RIGHT_POINTING_TRIANGLE
 			),
+	INFO_PICTOGRAMS('♿','⚠','☡','✈','✆','☎','☏','☕'),
+	WEATHER('❄','❅','❆','☼','☉','☀','☁','☔','☂'),
+	MALE_FEMALE('♂','♀','⚨','⚩','⚦','⚲'),
+	HAZARD('⚛','☠','☢','☣','⚠','⚡','☡'),
 	;
 	
 	private final List<Character> chars = new ArrayList<>();
 	public List<Character> getChars() { return chars; }
 
+	Logger log = LoggerFactory.getLogger(getClass().getName());
 	CharPalette(char... chars) {
 		for (char ch : chars) this.chars.add(ch);
+		log.debug("Length of 10 spades: " + "🂪".length());
+		BreakIterator boundary = BreakIterator.getCharacterInstance();
 	}
 	
 

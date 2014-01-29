@@ -46,7 +46,7 @@ class TMEditorToolPanel extends Panel {
 		brushPanel.addComponent(characterBoxBrushList);
 
 		final Panel palettePanel = new Panel(Panel.Orientation.HORIZONTAL);
-		palettePanel.addComponent(new Label("Box Brush: "));
+		palettePanel.addComponent(new Label("Char Palette 🂪: "));
 		palettePanel.addComponent(characterPaletteList);
 
 		this.addComponent(editModePanel);

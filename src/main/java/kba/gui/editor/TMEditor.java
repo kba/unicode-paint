@@ -2,8 +2,8 @@ package kba.gui.editor;
 
 import java.awt.Font;
 import java.awt.FontFormatException;
+import java.awt.geom.AffineTransform;
 import java.io.IOException;
-import java.net.URL;
 
 import com.google.common.io.Resources;
 import com.googlecode.lanterna.TerminalFacade;
@@ -23,18 +23,35 @@ public class TMEditor{
 	
 	public static void main(String[] args) throws FontFormatException, IOException {
 		Font font;
+        Font unifontBase;
 		font= new Font("PragmataPro", Font.PLAIN, 20);
-//		font = new Font("Monospaced", Font.BOLD, 20);
+//		font= new Font("Monaco", Font.PLAIN, 20);
+//		font = new Font("Monospaced", Font.PLAIN, 20);
+//		font = new Font("Monospace", Font.PLAIN, 20);
+//		Font cambria = new Font("Cambria", Font.PLAIN, 20);
+		Font mplusonem = new Font("m+ 1m", Font.PLAIN, 20);
+		Font pragmatapro = Font.createFont(Font.TRUETYPE_FONT, Resources.getResource("PragmataPro.ttf").openStream());
 //		font = new Font("DejaVu Sans Mono", Font.BOLD, 20);
-        Font createFont = Font.createFont(Font.TRUETYPE_FONT, Resources.getResource("unifont.ttf").openStream());
-//		font = createFont.deriveFont(Font.BOLD, 20);
+		unifontBase = Font.createFont(Font.TRUETYPE_FONT, Resources.getResource("unifont.ttf").openStream());
+//        createFont = Font.createFont(Font.TRUETYPE_FONT, Resources.getResource("Quivira.otf").openStream());
+//        createFont = Font.createFont(Font.TRUETYPE_FONT, Resources.getResource("Symbola.ttf").openStream());
+//        createFont = Font.createFont(Font.TRUETYPE_FONT, Resources.getResource("monaco.ttf").openStream());
+//		font = createFont.deriveFont(Font.BOLD, 24);
+		unifontBase = Font.createFont(Font.TRUETYPE_FONT, Resources.getResource("unifont.ttf").openStream());
+		Font arialBase = Font.createFont(Font.TRUETYPE_FONT, Resources.getResource("arial.ttf").openStream());
+		Font arial = arialBase.deriveFont(Font.BOLD, 20);
+		Font unifont = unifontBase.deriveFont(Font.BOLD, 20);
+		Font unifontHalfWidth = unifont.deriveFont(AffineTransform.getScaleInstance(.6, 1));
+		unifontHalfWidth = unifontHalfWidth.deriveFont(Font.PLAIN, 20);
 		SwingTerminal terminal = new SwingTerminal(
 				TerminalAppearance.DEFAULT_APPEARANCE
 				.withFont(font)
 				.withPalette(TerminalPalette.MAC_OS_X_TERMINAL_APP)
 				.withUseBrightColors(false)
-				.withUseAntiAliasing(true),
-				110, 30
+				.withUseAntiAliasing(true)
+				.withWideFont(unifontHalfWidth)
+				.withFallbackFonts(unifont, arial)
+				, 110, 30
 				);
 		final GUIScreen guiScreen = TerminalFacade.createGUIScreen(terminal);
 		guiScreen.getScreen().startScreen();

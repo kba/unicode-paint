@@ -2,4 +2,5 @@
 .project
 .settings/
 target
-src/main/resources/unifont.ttf
+src/main/resources/*ttf
+src/main/resources/*otf
