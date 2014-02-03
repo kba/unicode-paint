@@ -1,8 +1,4 @@
-package kba.gui.editor;
-
-import java.text.BreakIterator;
-import java.util.ArrayList;
-import java.util.List;
+package kba.unicodeart;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -61,19 +57,24 @@ public enum CharPalette {
 	HAZARD('⚛','☠','☢','☣','⚠','⚡','☡'),
 	;
 	
-	private final List<Character> chars = new ArrayList<>();
-	public List<Character> getChars() { return chars; }
+	private final char[] chars;
+	public char[] getChars() { return chars; }
 
 	Logger log = LoggerFactory.getLogger(getClass().getName());
 	CharPalette(char... chars) {
-		for (char ch : chars) this.chars.add(ch);
-		log.debug("Length of 10 spades: " + "🂪".length());
-		BreakIterator boundary = BreakIterator.getCharacterInstance();
+//		for (char ch : chars) this.chars.add(ch);
+//		log.debug("Length of 10 spades: " + "🂪".length());
+//		BreakIterator boundary = BreakIterator.getCharacterInstance();
+		this.chars = chars;
 	}
 	
+	
+//	@Override
+//	public String toString() {
+//		return super.toString();
+//	}
 
-	@Override
-	public String toString() {
+	public String toValueString() {
 		return StringUtils.join(chars, "");
 	}
 

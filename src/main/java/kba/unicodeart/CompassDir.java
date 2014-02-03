@@ -1,4 +1,4 @@
-package kba.gui.editor;
+package kba.unicodeart;
 
 public enum CompassDir {
 	NORTH(		 0, -1),

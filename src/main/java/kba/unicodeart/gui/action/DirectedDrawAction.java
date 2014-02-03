@@ -1,18 +1,21 @@
-package kba.gui.editor;
+package kba.unicodeart.gui.action;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.NoSuchElementException;
+
+import kba.unicodeart.CharacterBoxBrush;
+import kba.unicodeart.CompassDir;
+import kba.unicodeart.format.LanternaAdapter;
 
 import com.googlecode.lanterna.terminal.TerminalPosition;
 
-class DirectedDrawAction extends DrawAction {
+public class DirectedDrawAction extends DrawAction {
 		
-		public CharacterBoxBrush brush = CharacterBoxBrush.BOX_LIGHT;
-		public CompassDir selectedDir;
-		public CompassDir drawDir;
-		public CompassDir moveDir;
+		private CharacterBoxBrush brush = CharacterBoxBrush.BOX_LIGHT;
+		private CompassDir selectedDir;
+		private CompassDir drawDir;
+		CompassDir moveDir;
 		
 //		public DrawAction(TerminalPosition pos, CompassDir dir, char ch) {
 //			this.ch = ch;
@@ -42,42 +45,48 @@ class DirectedDrawAction extends DrawAction {
 			transitions.get(CompassDir.WEST).put(CompassDir.WEST, CompassDir.SOUTH);
 		}
 		
-		private CompassDir getLastMoveDir(LinkedList<DrawAction> history) {
-			CompassDir retDir = null;
-			try {
-				DrawAction lastAct = history.getFirst();
-				if (lastAct instanceof DirectedDrawAction) {
-					retDir = ((DirectedDrawAction) lastAct).moveDir;
-				}
-			} catch (NoSuchElementException e) { }
-			return retDir;
-		}
-		
 		private Map<CompassDir,Map<CompassDir,CompassDir>> transitions = new HashMap<>();
 		
 		public void execute(LinkedList<DrawAction> history) {
 			super.execute(history);
-			this.moveDir = selectedDir;
+			this.moveDir = getSelectedDir();
 			CompassDir lastMoveDir = getLastMoveDir(history);
 			if (null == lastMoveDir) {
-				lastMoveDir = selectedDir;
+				lastMoveDir = getSelectedDir();
 			}
 			boolean fail = false;
-			switch(selectedDir) {
+			switch(getSelectedDir()) {
 			case NORTHEAST: case NORTHWEST: case SOUTHEAST: case SOUTHWEST:
 				fail = true;
 				break;
 			default:
-				drawDir = transitions.get(lastMoveDir).get(selectedDir);
+				drawDir = transitions.get(lastMoveDir).get(getSelectedDir());
 			}
-			log.debug("Draw Direction" + drawDir);
-			if (fail) {
-				return;
+//			log.debug("Draw Direction" + drawDir);
+			if (! fail) {
+				getLayer().get(this.getOldPos().getColumn(), this.getOldPos().getRow()).setFg(LanternaAdapter.toAwtColor(getNewFg()));
+				getLayer().get(this.getOldPos().getColumn(), this.getOldPos().getRow()).setBg(LanternaAdapter.toAwtColor(getNewBg()));
+				getLayer().get(this.getOldPos().getColumn(), this.getOldPos().getRow()).setCharacter(getBrush().get(drawDir));
+				this.setNewPos(new TerminalPosition(
+						Math.min(Math.max(getOldPos().getColumn() + moveDir.getDeltaX(), 0), getLayer().getWidth() - 1),
+						Math.min(Math.max(getOldPos().getRow() + moveDir.getDeltaY(), 0), getLayer().getHeight() - 1)));
+				history.addFirst(this);
 			}
-			layer.set(this.oldPos, brush.get(drawDir));
-			this.newPos = new TerminalPosition(
-					Math.min(Math.max(oldPos.getColumn() + moveDir.getDeltaX(), 0), layer.getWidth() - 1),
-					Math.min(Math.max(oldPos.getRow() + moveDir.getDeltaY(), 0), layer.getHeight() - 1));
-			history.addFirst(this);
+		}
+
+		public CharacterBoxBrush getBrush() {
+			return brush;
+		}
+
+		public void setBrush(CharacterBoxBrush brush) {
+			this.brush = brush;
+		}
+
+		public CompassDir getSelectedDir() {
+			return selectedDir;
+		}
+
+		public void setSelectedDir(CompassDir selectedDir) {
+			this.selectedDir = selectedDir;
 		}
 	}

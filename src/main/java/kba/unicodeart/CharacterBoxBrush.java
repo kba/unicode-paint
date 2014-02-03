@@ -1,4 +1,4 @@
-package kba.gui.editor;
+package kba.unicodeart;
 
 /**
      *
@@ -26,11 +26,11 @@ U+257x	╰	╱	╲	╳	╴	╵	╶	╷	╸	╹	╺	╻	╼	╽	╾	╿
      */
     public enum CharacterBoxBrush {
 
-    	ASCII_SIMPLE('+', '-', '+', '|', '+', '-', '+', '|'),
-    	BOX_ROUND('╭', '─', '╮', '│', '╯', '─', '╰', '│'),
-    	BOX_LIGHT('┌', '─', '┐', '│', '┘', '─', '└', '│'),
-    	BOX_DOUBLE('╔', '═', '╗', '║', '╝', '═', '╚', '║'),
-    	BOX_FAT('┏', '━', '┓', '┃', '┛', '━', '┗', '┃');
+    	ASCII_SIMPLE('+', '-', '+', '|', '+', '-', '+', '|', '+'),
+    	BOX_ROUND('╭', '─', '╮', '│', '╯', '─', '╰', '│', '┼'),
+    	BOX_LIGHT('┌', '─', '┐', '│', '┘', '─', '└', '│', '┼'),
+    	BOX_DOUBLE('╔', '═', '╗', '║', '╝', '═', '╚', '║', '╬' ),
+    	BOX_FAT('┏', '━', '┓', '┃', '┛', '━', '┗', '┃', '╋');
 
     	public final char nw;
     	public final char n;
@@ -40,8 +40,9 @@ U+257x	╰	╱	╲	╳	╴	╵	╶	╷	╸	╹	╺	╻	╼	╽	╾	╿
     	public final char s;
     	public final char sw;
     	public final char w;
+    	public final char c;
 
-    	CharacterBoxBrush( char nw, char n, char ne, char e, char se, char s, char sw, char w) {
+    	CharacterBoxBrush( char nw, char n, char ne, char e, char se, char s, char sw, char w, char c) {
     		this.nw = nw; 
     		this.n = n; 
     		this.ne = ne;
@@ -50,6 +51,7 @@ U+257x	╰	╱	╲	╳	╴	╵	╶	╷	╸	╹	╺	╻	╼	╽	╾	╿
     		this.s = s; 
     		this.sw = sw;
     		this.w = w;
+    		this.c = c;
     	}
     	
     	public CharacterBoxBrush getNext() { return values()[(ordinal()+1) % values().length]; }
@@ -58,22 +60,22 @@ U+257x	╰	╱	╲	╳	╴	╵	╶	╷	╸	╹	╺	╻	╼	╽	╾	╿
     		StringBuilder sb = new StringBuilder();
     		return
 			sb.append(nw)	.append(n)	.append(ne).append("\n")
-			  .append(w)				.append(e).append("\n")
+			  .append(w)	.append(c)	.append(e).append("\n")
 			  .append(sw)	.append(s)	.append(se).toString();
     	}
     	
     	public char get(CompassDir dir) {
-    		char ret = 0;
-    		switch(dir) {
-			case EAST: return e;
-			case NORTH: return n;
-			case NORTHEAST: return ne;
-			case NORTHWEST: return nw;
-			case SOUTH: return s;
-			case SOUTHEAST: return se;
-			case SOUTHWEST: return sw;
-			case WEST: return w;
-			default: return ret;
-    		}
+    		if (null != dir) 
+    			switch(dir) {
+    			case EAST: return e;
+    			case NORTH: return n;
+    			case NORTHEAST: return ne;
+    			case NORTHWEST: return nw;
+    			case SOUTH: return s;
+    			case SOUTHEAST: return se;
+    			case SOUTHWEST: return sw;
+    			case WEST: return w;
+    			}
+    		return c;
     	}
     }

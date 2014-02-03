@@ -1,21 +1,22 @@
 #!/bin/bash
+FONTDIR=src/main/resources/fonts/
 download_unifont() {
     VERSION=6.3.20131221
     wget http://unifoundry.com/pub/unifont-6.3.20131221/font-builds/unifont-${VERSION}.ttf.gz
     gunzip unifont-${VERSION}.ttf.gz
-    mv unifont-${VERSION}.ttf src/main/resources/unifont.ttf
+    mv unifont-${VERSION}.ttf $FONTDIR/unifont.ttf
 }
 download_quivira() {
     wget http://www.quivira-font.com/files/Quivira.otf
-    mv Quivira.otf src/main/resources
+    mv Quivira.otf $FONTDIR
 }
 download_symbola() {
     wget http://users.teilar.gr/~g1951d/Symbola.ttf
-    mv Symbola.ttf src/main/resources
+    mv Symbola.ttf $FONTDIR
 }
 download_monaco() {
     wget https://github.com/todylu/monaco.ttf/raw/master/monaco.ttf
-    mv monaco.ttf src/main/resources
+    mv monaco.ttf $FONTDIR
 }
 download_monospace() {
     wget http://www.fontspace.com/download/13274/f5c14068e8b84b83aa5e60a1ccb3195d/george-williams_monospace.zip

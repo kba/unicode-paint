@@ -1,4 +1,4 @@
-package kba.gui.editor;
+package kba.unicodeart;
 
 import org.junit.Test;
 import org.slf4j.Logger;

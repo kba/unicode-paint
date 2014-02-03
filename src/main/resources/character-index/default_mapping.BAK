@@ -1,0 +1,14 @@
+# Taken from the most common unicode characters
+# see http://rsiqueira.postbit.com/upload/2/posts/unicode.html
+0123456789
+abcdefghijklmnopqrstuvwxyz
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+!@#$%^&*()-_+=[]{};':",./<>?`|~
+
+#⁰¹²³⁴⁵⁶⁷⁸⁹
+#₀₁₂₃₄₅₆₇₈₉
+#¡¢£¥¦§¨ª«¯°±´¶¸º»
+ΣΓΔ
+#‹›
+← ↑ → ↓ ↔ ↕ ↖ ↗ ↘ ↙
+# ！＂＃＄％＆＇（）＊＋，－．／０１２３４５６７８９：；＜＝＞？＠ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ［＼］＾＿｀ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ｛｜｝～
