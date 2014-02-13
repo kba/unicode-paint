@@ -11,18 +11,34 @@ import com.googlecode.lanterna.gui.component.Panel.Orientation;
 import com.googlecode.lanterna.gui.component.TextBox;
 import com.googlecode.lanterna.gui.layout.LinearLayout;
 
+/**
+ * Dialog to fill an area
+ *
+ */
 public class FillDialog extends Window {
 	public boolean ok = false;
 	
+	/**
+	 * The character to use for filling
+	 */
 	public char fillChar;
+	/**
+	 * Whether to use the #fillChar char to use for filling, defaults to <code>true</code>
+	 */
 	public boolean doFillChar = true;
+	/**
+	 * Whether to use the #fillChar foreground color to use for filling, defaults to <code>true</code>
+	 */
 	public boolean doFillFg = true;
-	public boolean doFillBg = true;
+	/**
+	 * Whether to use the #fillChar foreground color to use for filling, defaults to <code>false</code>
+	 */
+	public boolean doFillBg = false;
 
 	public FillDialog(TMEditor applicationState) {
 		super("Fill options");
 		
-		final TextBox fillCharTextBox = new TextBox(String.valueOf(applicationState.getCurPaletteChar()), 1);
+		final TextBox fillCharTextBox = new TextBox(String.valueOf(applicationState.getCurrentChar()), 1);
 		final CheckBox doFillCharCheckbox = new CheckBox("Fill char", doFillChar);
 		final CheckBox doFillFgCheckbox = new CheckBox("Fill Fg", doFillFg);
 		final CheckBox doFillBgCheckbox = new CheckBox("Fill Bg", doFillBg);

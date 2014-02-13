@@ -24,13 +24,13 @@ U+257x	╰	╱	╲	╳	╴	╵	╶	╷	╸	╹	╺	╻	╼	╽	╾	╿
      * ╳╳╳╳
      * ╳╳╳╳
      */
-    public enum CharacterBoxBrush {
+public class CharacterBoxBrush {
 
-    	ASCII_SIMPLE('+', '-', '+', '|', '+', '-', '+', '|', '+'),
-    	BOX_ROUND('╭', '─', '╮', '│', '╯', '─', '╰', '│', '┼'),
-    	BOX_LIGHT('┌', '─', '┐', '│', '┘', '─', '└', '│', '┼'),
-    	BOX_DOUBLE('╔', '═', '╗', '║', '╝', '═', '╚', '║', '╬' ),
-    	BOX_FAT('┏', '━', '┓', '┃', '┛', '━', '┗', '┃', '╋');
+    	public static CharacterBoxBrush ASCII_SIMPLE = new CharacterBoxBrush('+', '-', '+', '|', '+', '-', '+', '|', '+');
+    	public static CharacterBoxBrush BOX_ROUND = new CharacterBoxBrush('╭', '─', '╮', '│', '╯', '─', '╰', '│', '┼');
+    	public static CharacterBoxBrush BOX_LIGHT = new CharacterBoxBrush('┌', '─', '┐', '│', '┘', '─', '└', '│', '┼');
+    	public static CharacterBoxBrush BOX_DOUBLE = new CharacterBoxBrush('╔', '═', '╗', '║', '╝', '═', '╚', '║', '╬' );
+    	public static CharacterBoxBrush BOX_FAT = new CharacterBoxBrush('┏', '━', '┓', '┃', '┛', '━', '┗', '┃', '╋');
 
     	public final char nw;
     	public final char n;
@@ -54,7 +54,9 @@ U+257x	╰	╱	╲	╳	╴	╵	╶	╷	╸	╹	╺	╻	╼	╽	╾	╿
     		this.c = c;
     	}
     	
-    	public CharacterBoxBrush getNext() { return values()[(ordinal()+1) % values().length]; }
+    	/* (non-Javadoc)
+    	 * @see java.lang.Object#toString()
+    	 */
     	@Override
     	public String toString() {
     		StringBuilder sb = new StringBuilder();
@@ -64,6 +66,10 @@ U+257x	╰	╱	╲	╳	╴	╵	╶	╷	╸	╹	╺	╻	╼	╽	╾	╿
 			  .append(sw)	.append(s)	.append(se).toString();
     	}
     	
+    	/**
+    	 * @param dir direction to draw towards. Draw this.c if null.
+    	 * @return the corresponding char
+    	 */
     	public char get(CompassDir dir) {
     		if (null != dir) 
     			switch(dir) {

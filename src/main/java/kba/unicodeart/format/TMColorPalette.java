@@ -11,21 +11,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import kba.unicodeart.format.colored_char.TMColoredCharacter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.googlecode.lanterna.terminal.swing.TerminalPalette;
 
-public class TMEditFormatColorPalette {
+/**
+ * A trimap of character, integer index and {@link Color}
+ *
+ */
+public class TMColorPalette {
 	
-	static Logger log = LoggerFactory.getLogger(TMEditFormatColorPalette.class);
+	private static final Logger log = LoggerFactory.getLogger(TMColorPalette.class);
 
 	public static final List<Character> DEFAULT_CHARACTER_INDEX;
 	static {
 		DEFAULT_CHARACTER_INDEX = new ArrayList<>();
 		String filename = "/character-index/default_mapping";
 		try {
-			InputStream is = TMEditFormatColorPalette.class.getResource(filename).openStream();
+			InputStream is = TMColorPalette.class.getResource(filename).openStream();
 			try(BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
 				for(String line; (line = br.readLine()) != null; ) {
 					if (line.matches("^\\s*#.*")) continue;
@@ -52,7 +58,7 @@ public class TMEditFormatColorPalette {
 			String filename = entry.getKey();
 			List<Color> list = entry.getValue();
 			try {
-				InputStream is = TMEditFormatColorPalette.class.getResource(filename).openStream();
+				InputStream is = TMColorPalette.class.getResource(filename).openStream();
 				try(BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
 					for(String line; (line = br.readLine()) != null; ) {
 						list.add(Color.decode(line));
@@ -63,31 +69,31 @@ public class TMEditFormatColorPalette {
 			}
 		}
 	}
-	public static final TMEditFormatColorPalette GNOME_TERMINAL_88 = new TMEditFormatColorPalette(
+	public static final TMColorPalette GNOME_TERMINAL_88 = new TMColorPalette(
 			DEFAULT_CHARACTER_INDEX, TerminalPalette.GNOME_TERMINAL.asList(), TERM_88_COLORS);
-	public static final TMEditFormatColorPalette GNOME_TERMINAL_256 = new TMEditFormatColorPalette(
+	public static final TMColorPalette GNOME_TERMINAL_256 = new TMColorPalette(
 			DEFAULT_CHARACTER_INDEX, TerminalPalette.GNOME_TERMINAL.asList(), TERM_256_COLORS);
-	public static final TMEditFormatColorPalette STANDARD_VGA_88 = new TMEditFormatColorPalette(
+	public static final TMColorPalette STANDARD_VGA_88 = new TMColorPalette(
 			DEFAULT_CHARACTER_INDEX, TerminalPalette.STANDARD_VGA.asList(), TERM_88_COLORS);
-	public static final TMEditFormatColorPalette STANDARD_VGA_256 = new TMEditFormatColorPalette(
+	public static final TMColorPalette STANDARD_VGA_256 = new TMColorPalette(
 			DEFAULT_CHARACTER_INDEX, TerminalPalette.STANDARD_VGA.asList(), TERM_256_COLORS);
-	public static final TMEditFormatColorPalette WINDOWS_XP_COMMAND_PROMPT_88 = new TMEditFormatColorPalette(
+	public static final TMColorPalette WINDOWS_XP_COMMAND_PROMPT_88 = new TMColorPalette(
 			DEFAULT_CHARACTER_INDEX, TerminalPalette.WINDOWS_XP_COMMAND_PROMPT.asList(), TERM_88_COLORS);
-	public static final TMEditFormatColorPalette WINDOWS_XP_COMMAND_PROMPT_256 = new TMEditFormatColorPalette(
+	public static final TMColorPalette WINDOWS_XP_COMMAND_PROMPT_256 = new TMColorPalette(
 			DEFAULT_CHARACTER_INDEX, TerminalPalette.WINDOWS_XP_COMMAND_PROMPT.asList(), TERM_256_COLORS);
-	public static final TMEditFormatColorPalette MAC_OS_X_TERMINAL_APP_88 = new TMEditFormatColorPalette(
+	public static final TMColorPalette MAC_OS_X_TERMINAL_APP_88 = new TMColorPalette(
 			DEFAULT_CHARACTER_INDEX, TerminalPalette.MAC_OS_X_TERMINAL_APP.asList(), TERM_88_COLORS);
-	public static final TMEditFormatColorPalette MAC_OS_X_TERMINAL_APP_256 = new TMEditFormatColorPalette(
+	public static final TMColorPalette MAC_OS_X_TERMINAL_APP_256 = new TMColorPalette(
 			DEFAULT_CHARACTER_INDEX, TerminalPalette.MAC_OS_X_TERMINAL_APP.asList(), TERM_256_COLORS);
-	public static final TMEditFormatColorPalette PUTTY_88 = new TMEditFormatColorPalette(
+	public static final TMColorPalette PUTTY_88 = new TMColorPalette(
 			DEFAULT_CHARACTER_INDEX, TerminalPalette.PUTTY.asList(), TERM_88_COLORS);
-	public static final TMEditFormatColorPalette PUTTY_256 = new TMEditFormatColorPalette(
+	public static final TMColorPalette PUTTY_256 = new TMColorPalette(
 			DEFAULT_CHARACTER_INDEX, TerminalPalette.PUTTY.asList(), TERM_256_COLORS);
-	public static final TMEditFormatColorPalette XTERM_88 = new TMEditFormatColorPalette(
+	public static final TMColorPalette XTERM_88 = new TMColorPalette(
 			DEFAULT_CHARACTER_INDEX, TerminalPalette.XTERM.asList(), TERM_88_COLORS);
-	public static final TMEditFormatColorPalette XTERM_256 = new TMEditFormatColorPalette(
+	public static final TMColorPalette XTERM_256 = new TMColorPalette(
 			DEFAULT_CHARACTER_INDEX, TerminalPalette.XTERM.asList(), TERM_256_COLORS);
-	public static final TMEditFormatColorPalette DEFAULT_PALETTE = TMEditFormatColorPalette.MAC_OS_X_TERMINAL_APP_256;
+	public static final TMColorPalette DEFAULT_PALETTE = TMColorPalette.MAC_OS_X_TERMINAL_APP_256;
 
 	private final Map<Character,Integer> charToIndex = new HashMap<>();
 	private final Map<Color,Integer> colorToIndex = new HashMap<>();
@@ -101,20 +107,21 @@ public class TMEditFormatColorPalette {
 	}
 
 	@SafeVarargs
-	public TMEditFormatColorPalette(List<Color>... colorIndexes) {
+	public TMColorPalette(List<Color>... colorIndexes) {
 		this(DEFAULT_CHARACTER_INDEX, colorIndexes);
 	}
 	
 	@SafeVarargs
-	public TMEditFormatColorPalette(List<Character> characterIndex, List<Color>... colorLists) {
+	public TMColorPalette(List<Character> characterIndex, List<Color>... colorLists) {
 		ArrayList<Color> colorList = new ArrayList<>();
 		for (List<Color> thisColorList : colorLists) {
 			colorList.addAll(thisColorList);
 		}
-		log.debug("Colors: " + colorList.size());
 		for (int i = 0; i < Math.min(characterIndex.size(), colorList.size()); i++) {
 			Character ch = characterIndex.get(i);
 			Color color = colorList.get(i);
+			if (this.colorIndex.contains(color))
+				continue;
 			this.charIndex.add(ch);
 			this.colorIndex.add(color);
 			this.charToColor.put(ch, color);
@@ -125,6 +132,7 @@ public class TMEditFormatColorPalette {
 	}
 
 	private List<Color> getColorIndex() { return colorIndex; }
+
 	public char getCharByIndex(int index) { return charIndex.get(index); }
 
 	public int getIndexByChar(char ch) { return charToIndex.get(ch); }
@@ -145,6 +153,42 @@ public class TMEditFormatColorPalette {
 			sb.append("\n");
 		}
 		return sb.toString();
+	}
+
+	/**
+	 * Return the <code>char</code> that represents this {@link java.awt.Color}
+	 * @param color the Color to find a char for
+	 * @return the character that represents this Color
+	 */
+	public char getCharByColor(Color color) {
+//		log.debug("Asking for Color " + color +". ");
+//		log.debug("Indexed as " + getIndexByColor(color) + ". ");
+		char ch = '␀'; // TODO Magic Number \u2400
+		if (color.equals(TMColoredCharacter.TRANSPARENT.getFg()) || color.equals(TMColoredCharacter.TRANSPARENT.getBg())) {
+			return ch;
+		} else {
+			try {
+				ch = colorToChar.get(color);
+			} catch (NullPointerException e) {
+				log.error("This color isn't in the palette: " + color);
+				e.printStackTrace();
+				log.debug("Exception!", e);
+			}
+		}
+		return ch;
+	}
+	
+	public int getIndexByColor(Color color) {
+//		log.debug("colorToIndex: " + colorToIndex);
+		int colorIndex = -1; // TODO Magic Number
+		try {
+			colorIndex = colorToIndex.get(color);
+		} catch (NullPointerException e) {
+			log.error("This color isn't in the palette: " + color);
+			e.printStackTrace();
+			log.debug("Exception!", e);
+		}
+		return colorIndex;
 	}
 
 }

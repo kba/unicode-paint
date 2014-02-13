@@ -1,13 +1,13 @@
-package kba.unicodeart.format;
+package kba.unicodeart.format.colored_char;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.awt.Color;
+
+import kba.unicodeart.format.colored_char.TMColoredCharacter;
 
 import org.junit.Test;
 

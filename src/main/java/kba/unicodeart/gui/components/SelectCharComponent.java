@@ -1,4 +1,4 @@
-package kba.unicodeart.gui;
+package kba.unicodeart.gui.components;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +13,11 @@ import com.googlecode.lanterna.terminal.ACS;
 import com.googlecode.lanterna.terminal.TerminalSize;
 import com.googlecode.lanterna.terminal.TextColor;
 
+/**
+ * A component that contains a list of characters and allows the user to select one of them.
+ * @author kba
+ *
+ */
 public class SelectCharComponent extends AbstractInteractableComponent  {
 	private static final char SCROLLBAR_BACKGROUND = ACS.BLOCK_SPARSE;
 	private static final char SCROLLBAR_HANDLE = ACS.BLOCK_SOLID;
@@ -26,11 +31,20 @@ public class SelectCharComponent extends AbstractInteractableComponent  {
 	private final int maxHeight;
 	private int lineOffset = 0;
 	private boolean disableHighlight = false;
+	private boolean forceMonochrome = false;
 	private ScreenCharacterStyle selectedStyle = ScreenCharacterStyle.Blinking;
 	private ScreenCharacterStyle cursorStyle = ScreenCharacterStyle.Bordered;
 
+	/**
+	 * @return the cursor index
+	 */
 	public int getCursorIndex() { return cursorIndex; }
+
+	/**
+	 * @param cursorIndex the index to set the cursor to
+	 */
 	public void setCursorIndex(int cursorIndex) { this.cursorIndex = cursorIndex; }
+
 	public void incCursorIndex(int delta) {
 		cursorIndex = cursorIndex + delta;
 		if (cursorIndex < 0) cursorIndex = 0;
@@ -39,10 +53,11 @@ public class SelectCharComponent extends AbstractInteractableComponent  {
 		if (cursorIndex < ((lineOffset + getActualHeight() -1) * actualWidth) + cursorIndex % actualWidth) { incLineOffset(-1); }
 		else if (cursorIndex > ((lineOffset + getActualHeight() - 1) * actualWidth) + cursorIndex % actualWidth) { incLineOffset(1); }
 	}
+
 	public List<ScreenCharacter> getChars() { return chars; }
-	public void setChars(List<ScreenCharacter> chars) {
-		this.chars = chars;
-	}
+
+	public void setChars(List<ScreenCharacter> chars) { this.chars = chars; }
+
 	public void setChars(char[] chars) { 
 		this.chars.clear();
 		for (char ch : chars) {
@@ -50,13 +65,23 @@ public class SelectCharComponent extends AbstractInteractableComponent  {
 			addChar(screenCh);
 		}
 	}
+
 	public void addChar(ScreenCharacter screenCh) {
 		this.chars.add(screenCh);
 		invalidate();
 	}
 
+	public ScreenCharacter getSelectedScreenCharacter() {
+		return chars.get(selectedIndex);
+	}
+
+	/**
+	 * @return the index of the currently selected char
+	 */
 	public int getSelectedIndex() { return selectedIndex; }
+
 	public void setSelectedIndex(int selectedIndex) { this.selectedIndex = selectedIndex; }
+
 	public void incSelectedIndex(int delta) {
 		selectedIndex = selectedIndex + delta;
 		if (selectedIndex < 0) selectedIndex = 0;
@@ -64,13 +89,21 @@ public class SelectCharComponent extends AbstractInteractableComponent  {
 //		if (selectedIndex < lineOffset * actualWidth) { incLineOffset(-1); }
 //		if (selectedIndex > lineOffset * actualWidth) { incLineOffset(1); }
 	}
+
 	public int getMaxWidth() { return maxWidth; }
+
 	public int getActualWidth() { return actualWidth; }
-	public void setActualWidth(int actualWidth) { this.actualWidth = actualWidth; }
-	public int getActualHeight() { return actualHeight; }
-	public void setActualHeight(int actualHeight) { this.actualHeight = actualHeight; }
+
+	private void setActualWidth(int actualWidth) { this.actualWidth = actualWidth; }
+
+	private int getActualHeight() { return actualHeight; }
+
+	private void setActualHeight(int actualHeight) { this.actualHeight = actualHeight; }
+
 	public int getLineOffset() { return lineOffset; }
+
 	public void setLineOffset(int lineOffset) { this.lineOffset = lineOffset; }
+
 	public void incLineOffset(int delta) {
 		this.lineOffset += delta;
 		if (this.lineOffset < 0) this.lineOffset = 0;
@@ -135,8 +168,10 @@ public class SelectCharComponent extends AbstractInteractableComponent  {
 
 			int col = i % getActualWidth();
 			int row = (i - lineOffset*getActualWidth()) / getActualWidth();
+			if (! forceMonochrome) {
 				graphics.setBackgroundColor(curChar.getBackgroundColor());
 				graphics.setForegroundColor(curChar.getForegroundColor());
+			}
 			if (! disableHighlight) {
 				if (hasFocus()) graphics.applyTheme(
 						graphics.getTheme().getDefinition(Theme.Category.TEXTBOX_FOCUSED));
@@ -169,6 +204,16 @@ public class SelectCharComponent extends AbstractInteractableComponent  {
 		}
 		return new TerminalSize(maxWidth, maxHeight);
 	}
+
+	/**
+	 * @return whether background is overriden as transparent
+	 */
+	public boolean isForceMonochrome() { return forceMonochrome; }
+
+	/**
+	 * @param forceMonochrome whether or not to draw transparent background
+	 */
+	public void setForceMonochrome(boolean forceMonochrome) { this.forceMonochrome = forceMonochrome; }
 
 
 

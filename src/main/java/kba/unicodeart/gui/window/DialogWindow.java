@@ -1,7 +1,5 @@
 package kba.unicodeart.gui.window;
 
-import java.awt.LayoutManager;
-
 import com.googlecode.lanterna.gui.Action;
 import com.googlecode.lanterna.gui.Window;
 import com.googlecode.lanterna.gui.component.Button;

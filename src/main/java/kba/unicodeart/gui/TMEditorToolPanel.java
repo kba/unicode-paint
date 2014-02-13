@@ -2,8 +2,10 @@ package kba.unicodeart.gui;
 
 import kba.unicodeart.CharPalette;
 import kba.unicodeart.CharacterBoxBrush;
-import kba.unicodeart.format.LanternaAdapter;
 import kba.unicodeart.format.TMEditFormatLayer;
+import kba.unicodeart.format.TMLanternaAdapter;
+import kba.unicodeart.gui.components.SelectCharComponent;
+import kba.unicodeart.gui.window.TMEditorWindow;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,22 +22,27 @@ import com.googlecode.lanterna.gui.listener.ComponentAdapter;
 import com.googlecode.lanterna.screen.ScreenCharacter;
 import com.googlecode.lanterna.terminal.TextColor;
 
-class TMEditorToolPanel extends Panel {
+/**
+ * @author kba
+ *
+ */
+public class TMEditorToolPanel extends Panel {
 
 	Logger log = LoggerFactory.getLogger(getClass().getName());
 	
     final PopupCheckBoxList characterBoxBrushList;
-    public PopupCheckBoxList getCharacterBoxBrushList() { return characterBoxBrushList; }
     final PopupCheckBoxList layerBoxList;
-    public PopupCheckBoxList getLayerBoxList() { return layerBoxList; }
     final PopupCheckBoxList characterPaletteList;
-    final SelectCharComponent characterPaletteSelect = new SelectCharComponent(10, 2, false);
-    public SelectCharComponent getCharacterPaletteSelect() { return characterPaletteSelect; }
+    final SelectCharComponent characterPaletteSelect;
     final SelectCharComponent fgPaletteList;
-    public SelectCharComponent getFgPaletteList() { return fgPaletteList; }
     final SelectCharComponent bgPaletteList;
-    public SelectCharComponent getBgPaletteList() { return bgPaletteList; }
     final Label modeLabel = new Label();
+
+    public PopupCheckBoxList getCharacterBoxBrushList() { return characterBoxBrushList; }
+    public PopupCheckBoxList getLayerBoxList() { return layerBoxList; }
+    public SelectCharComponent getCharacterPaletteSelect() { return characterPaletteSelect; }
+    public SelectCharComponent getFgPaletteList() { return fgPaletteList; }
+    public SelectCharComponent getBgPaletteList() { return bgPaletteList; }
     public Label getModeLabel() { return modeLabel; }
 
 	private TMEditor applicationState;
@@ -47,13 +54,10 @@ class TMEditorToolPanel extends Panel {
 		// Set Border
 		this.setBorder(new Border.Standard());
 		
-		fgPaletteList = new SelectCharComponent(20, 10, true);
-		bgPaletteList = new SelectCharComponent(20, 10, true);
-		char fgChar = 'F';
-//		log.debug("Color index: " + applicationState.getCurrentMap().getPalette().getColorIndex());
-//		log.debug("Color index: " + applicationState.getCurrentMap().getPalette().getCharToIndex());
+		fgPaletteList = new SelectCharComponent(20, 5, true);
+		bgPaletteList = new SelectCharComponent(20, 5, true);
 		for (int i =0 ; i < applicationState.getCurrentMap().getPalette().size() ; i++) {
-			TextColor textColor = LanternaAdapter.toTextColor(applicationState.getCurrentMap().getPalette().getColorByIndex(i));
+			TextColor textColor = TMLanternaAdapter.toTextColor(applicationState.getCurrentMap().getPalette().getColorByIndex(i));
 			char ch = applicationState.getCurrentMap().getPalette().getCharByIndex(i);
 			fgPaletteList.addChar(new ScreenCharacter(ch, textColor, TextColor.ANSI.BLACK));
 			bgPaletteList.addChar(new ScreenCharacter(ch, TextColor.ANSI.BLACK, textColor));
@@ -62,16 +66,14 @@ class TMEditorToolPanel extends Panel {
 			@Override
 			public void onComponentValueChanged(InteractableComponent component) {
 				SelectCharComponent comp = SelectCharComponent.class.cast(component);
-				TextColor color = comp.getChars().get(comp.getSelectedIndex()).getForegroundColor();
-				applicationState.setCurrentFg(color);
+				applicationState.setForegroundColorIndex(comp.getSelectedIndex());
 			}
 		});
 		bgPaletteList.addComponentListener(new ComponentAdapter() {
 			@Override
 			public void onComponentValueChanged(InteractableComponent component) {
 				SelectCharComponent comp = SelectCharComponent.class.cast(component);
-				TextColor color = comp.getChars().get(comp.getSelectedIndex()).getBackgroundColor();
-				applicationState.setCurrentBg(color);
+				applicationState.setBackgroundColorIndex(comp.getSelectedIndex());
 			}
 		});
 
@@ -88,10 +90,10 @@ class TMEditorToolPanel extends Panel {
 		characterBoxBrushList.addComponentListener(new ComponentAdapter() {
 			@Override public void onComponentInvalidated(Component comp) {
 				int checkedItemIndex = ((PopupCheckBoxList) comp).getCheckedItemIndex();
-				if (checkedItemIndex > -1) applicationState.setCurrentCharacterBoxBrush(CharacterBoxBrush.values()[checkedItemIndex]);
+				if (checkedItemIndex > -1) applicationState.setCurrentCharacterBoxBrushIndex(checkedItemIndex);
 			}
 		});
-		for (CharacterBoxBrush brush : CharacterBoxBrush.values()) {
+		for (CharacterBoxBrush brush : applicationState.getCharacterBoxBrushList()) {
 			this.characterBoxBrushList.addItem(brush.toString());
 		}
 		
@@ -103,8 +105,18 @@ class TMEditorToolPanel extends Panel {
 			@Override
 			public void onComponentValueChanged(InteractableComponent component) {
 				PopupCheckBoxList characterPaletteListInstance = PopupCheckBoxList.class.cast(component);
+				// TODO NPE
 				applicationState.setCurrentCharPalette((CharPalette) characterPaletteListInstance.getCheckedItem());
 				characterPaletteSelect.setChars(applicationState.getCurPalette().getChars());
+			}
+		});
+		characterPaletteSelect = new SelectCharComponent(10, 2, false);
+		characterPaletteSelect.addComponentListener(new ComponentAdapter() {
+			@Override
+			public void onComponentValueChanged(InteractableComponent component) {
+				SelectCharComponent characterPaletteSelectInstance = SelectCharComponent.class.cast(component);
+				// TODO this is bad, we need an index or something to properly wire it all together
+				applicationState.setCurrentChar(characterPaletteSelectInstance.getSelectedScreenCharacter().getCharacter());
 			}
 		});
 
@@ -154,15 +166,30 @@ class TMEditorToolPanel extends Panel {
 	
 	@Override
 	public void repaint(TextGraphics graphics) {
-//		System.out.println(this.layerBoxList);
-//		System.out.println(this.applicationState);
-//		System.out.println(this.applicationState.getCurrentLayerType());
-		int indexByLayer = applicationState.getCurrentMap().getIndexByLayer(applicationState.getCurrentLayer());
-		this.layerBoxList.setCheckedItemIndex(indexByLayer);
-		this.modeLabel.setText(applicationState.getCurrentMode().toString());
-		this.characterBoxBrushList.setCheckedItemIndex(applicationState.getCurBrush().ordinal());
-//		this.characterPaletteList.setCheckedItemIndex(applicationState.getCurPalette().ordinal());
+
+		updateLayerList();
+		updateModeLabel();
+		updateCharacterBoxBrushList();
+		updateCharacterPaletteList();
+
 		super.repaint(graphics);
+	}
+	public void updateCharacterBoxBrushList() {
+		this.characterBoxBrushList.setCheckedItemIndex(applicationState.getCurrentCharacterBoxBrushIndex());
+	}
+	public void updateCharacterPaletteList() {
+		this.characterPaletteList.setCheckedItemIndex(applicationState.getCurPalette().ordinal());
+	}
+	public void updateModeLabel() {
+		this.modeLabel.setText(applicationState.getCurrentMode().toString());
+	}
+	public void updateLayerList() {
+		int indexByLayer = applicationState.getCurrentMap().getIndexByLayer(applicationState.getCurrentLayer());
+		layerBoxList.clearItems();
+		for (TMEditFormatLayer layer : applicationState.getCurrentMap().getLayers()) {
+			layerBoxList.addItem(layer);
+		};
+		this.layerBoxList.setCheckedItemIndex(indexByLayer);
 	}
 	
 	

@@ -3,70 +3,120 @@ package kba.unicodeart.gui.action;
 import java.util.LinkedList;
 
 import kba.unicodeart.CompassDir;
-import kba.unicodeart.format.TMColoredCharacter;
-import kba.unicodeart.format.LanternaAdapter;
 import kba.unicodeart.format.TMEditFormatLayer;
+import kba.unicodeart.format.colored_char.TMColoredCharacter;
+import kba.unicodeart.gui.TMEditor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Preconditions;
 import com.googlecode.lanterna.terminal.TerminalPosition;
-import com.googlecode.lanterna.terminal.TextColor;
 
+/**
+ * Abstract base class of all draw actions
+ * @author kba
+ *
+ */
 abstract public class DrawAction {
-	private char oldChar;
-	public char getOldChar() { return oldChar; }
+	
+	private static final Logger log = LoggerFactory.getLogger(DrawAction.class);
 
-	private char drawChar;
-	public char getDrawChar() { return drawChar; }
-	public void setDrawChar(char drawChar) { this.drawChar = drawChar; }
-
+	private TMColoredCharacter drawChar;
 	private TerminalPosition oldPos;
-	public TerminalPosition getOldPos() { return oldPos; }
-	public void setOldPos(TerminalPosition oldPos) { this.oldPos = oldPos; }
-
 	private TerminalPosition newPos;
-	public TerminalPosition getNewPos() { return newPos; }
-	public void setNewPos(TerminalPosition newPos) { this.newPos = newPos; }
-
 	private TMEditFormatLayer layer;
-	public TMEditFormatLayer getLayer() { return layer; }
-	public void setLayer(TMEditFormatLayer layer) { this.layer = layer; }
+	private TMColoredCharacter oldChar;
+	private boolean transparent = false;
 
-	private TextColor oldFg;
-	public TextColor getOldFg() { return oldFg; }
-	public void setOldFg(TextColor oldFg) { this.oldFg = oldFg; }
+	/**
+	 * @return the colored character to draw
+	 */
+	public TMColoredCharacter getDrawChar() {
+		return drawChar;
+	}
 
-	private TextColor oldBg;
-	public TextColor getOldBg() { return oldBg; }
-	public void setOldBg(TextColor oldBg) { this.oldBg = oldBg; }
+	/**
+	 * @param drawChar the colored character to draw
+	 */
+	public void setDrawChar(TMColoredCharacter drawChar) {
+		this.drawChar = drawChar;
+	}
 
-	private TextColor newFg;
-	public TextColor getNewFg() { return newFg; }
-	public void setNewFg(TextColor newFg) { this.newFg = newFg; }
+	/**
+	 * @return the position where to draw
+	 */
+	public TerminalPosition getOldPos() {
+		return oldPos;
+	}
 
-	private TextColor newBg;
-	public TextColor getNewBg() { return newBg; }
-	public void setNewBg(TextColor newBg) { this.newBg = newBg; }
+	/**
+	 * @param oldPos the position where to draw
+	 */
+	public void setOldPos(TerminalPosition oldPos) {
+		this.oldPos = oldPos;
+	}
 
-	protected Logger log = LoggerFactory.getLogger(getClass().getName());
+	/**
+	 * @return the new cursor position
+	 */
+	public TerminalPosition getNewPos() {
+		return newPos;
+	}
 
-	public void execute(LinkedList<DrawAction> history) {
-		this.oldChar = getLayer().get(getOldPos().getColumn(), getOldPos().getRow()).getCharacter();
-		TMColoredCharacter coloredCharacter = getLayer().get(getOldPos().getColumn(), getOldPos().getRow());
-		setOldFg(LanternaAdapter.toTextColor(coloredCharacter.getFg()));
-		setOldBg(LanternaAdapter.toTextColor(coloredCharacter.getBg()));
+	/**
+	 * @param newPos the new cursor position
+	 */
+	public void setNewPos(TerminalPosition newPos) {
+		this.newPos = newPos;
+	}
+
+	/**
+	 * @return the layer to draw to
+	 */
+	public TMEditFormatLayer getLayer() {
+		return layer;
+	}
+
+	/**
+	 * @param layer the layer to draw to
+	 */
+	public void setLayer(TMEditFormatLayer layer) {
+		this.layer = layer;
+	}
+
+	/**
+	 * Executes this action
+	 * 
+	 * @param applicationState the applicationState (used for its' color character factory)
+	 * @throws IllegalArgumentException if either {@link #getLayer()} or {@link #getOldPos()} is not set.
+	 */
+	public void execute(TMEditor applicationState) {
+		Preconditions.checkNotNull(getLayer());
+		Preconditions.checkNotNull(getOldPos());
+		Preconditions.checkNotNull(isTransparent());
+		this.setOldChar(getLayer().get(getOldPos().getColumn(), getOldPos().getRow()));
 		this.newPos = oldPos;
 	}
+
+	/**
+	 * Undoes this action.
+	 */
 	public void undo() {
-		log.debug("Undoing, setting {} back to {}", getNewPos(), oldChar);
-		getLayer().get(getOldPos().getColumn(), getOldPos().getRow()).setCharacter(oldChar);
-		getLayer().get(getOldPos().getColumn(), getOldPos().getRow()).setFg(LanternaAdapter.toAwtColor(getOldFg()));
-		getLayer().get(getOldPos().getColumn(), getOldPos().getRow()).setBg(LanternaAdapter.toAwtColor(getOldBg()));
+		log.debug("Undoing, setting {} back to {}", getNewPos(), getOldChar());
+		getLayer().set(getOldPos().getColumn(), getOldPos().getRow(), getOldChar());
 	}
-	protected CompassDir getLastMoveDir(LinkedList<DrawAction> history) {
+
+	/**
+	 * Searches the last direction an action in the history has moved towards.
+	 * 
+	 * @param applicationState the {@link TMEditor} that contains the history to search
+	 * @return the last direction an action drawed towards
+	 */
+	protected CompassDir getLastMoveDir(TMEditor applicationState) {
 		CompassDir retDir = null;
-//		for (int i = history.size() - 1; i >= 0;  i--) {
+		LinkedList<DrawAction> history = applicationState.getDrawHistory();
+		// for (int i = history.size() - 1; i >= 0; i--) {
 		for (int i = 0; i < history.size(); i++) {
 			DrawAction lastAct;
 			lastAct = history.get(i);
@@ -76,5 +126,33 @@ abstract public class DrawAction {
 			}
 		}
 		return retDir;
+	}
+	
+	/**
+	 * @return whether the background should be transparent
+	 */
+	public boolean isTransparent() {
+		return transparent;
+	}
+
+	/**
+	 * @param transparent whether the background should be transparent
+	 */
+	public void setTransparent(boolean transparent) {
+		this.transparent = transparent;
+	}
+
+	/**
+	 * @return the colored character at the position to draw to
+	 */
+	public TMColoredCharacter getOldChar() {
+		return oldChar;
+	}
+
+	/**
+	 * @param oldChar the colored character at the position to draw to
+	 */
+	public void setOldChar(TMColoredCharacter oldChar) {
+		this.oldChar = oldChar;
 	}
 }

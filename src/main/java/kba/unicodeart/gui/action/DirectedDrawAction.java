@@ -1,92 +1,106 @@
 package kba.unicodeart.gui.action;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 
 import kba.unicodeart.CharacterBoxBrush;
 import kba.unicodeart.CompassDir;
-import kba.unicodeart.format.LanternaAdapter;
+import kba.unicodeart.gui.TMEditor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
 import com.googlecode.lanterna.terminal.TerminalPosition;
 
+/**
+ * Draw action for directional (box) drawing.
+ * 
+ * @author kba
+ *
+ */
 public class DirectedDrawAction extends DrawAction {
-		
-		private CharacterBoxBrush brush = CharacterBoxBrush.BOX_LIGHT;
-		private CompassDir selectedDir;
-		private CompassDir drawDir;
-		CompassDir moveDir;
-		
-//		public DrawAction(TerminalPosition pos, CompassDir dir, char ch) {
-//			this.ch = ch;
-//			this.drawDir = dir;
-//			this.curPos = pos;
-//		}
-		public DirectedDrawAction() {
-			super();
-			for (CompassDir curDir : CompassDir.values()) {
-				transitions.put(curDir, new HashMap<CompassDir,CompassDir>());
-			}
-			transitions.get(CompassDir.NORTH).put(CompassDir.NORTH, CompassDir.EAST);
-			transitions.get(CompassDir.NORTH).put(CompassDir.EAST, CompassDir.NORTHWEST);
-			transitions.get(CompassDir.NORTH).put(CompassDir.SOUTH, CompassDir.EAST);
-			transitions.get(CompassDir.NORTH).put(CompassDir.WEST, CompassDir.NORTHEAST);
-			transitions.get(CompassDir.EAST).put(CompassDir.NORTH, CompassDir.SOUTHEAST);
-			transitions.get(CompassDir.EAST).put(CompassDir.EAST, CompassDir.SOUTH);
-			transitions.get(CompassDir.EAST).put(CompassDir.SOUTH, CompassDir.NORTHEAST);
-			transitions.get(CompassDir.EAST).put(CompassDir.WEST, CompassDir.SOUTH);
-			transitions.get(CompassDir.SOUTH).put(CompassDir.NORTH, CompassDir.EAST);
-			transitions.get(CompassDir.SOUTH).put(CompassDir.EAST, CompassDir.SOUTHWEST);
-			transitions.get(CompassDir.SOUTH).put(CompassDir.SOUTH, CompassDir.EAST);
-			transitions.get(CompassDir.SOUTH).put(CompassDir.WEST, CompassDir.SOUTHEAST);
-			transitions.get(CompassDir.WEST).put(CompassDir.NORTH, CompassDir.SOUTHWEST);
-			transitions.get(CompassDir.WEST).put(CompassDir.EAST, CompassDir.SOUTH);
-			transitions.get(CompassDir.WEST).put(CompassDir.SOUTH, CompassDir.NORTHWEST);
-			transitions.get(CompassDir.WEST).put(CompassDir.WEST, CompassDir.SOUTH);
-		}
-		
-		private Map<CompassDir,Map<CompassDir,CompassDir>> transitions = new HashMap<>();
-		
-		public void execute(LinkedList<DrawAction> history) {
-			super.execute(history);
-			this.moveDir = getSelectedDir();
-			CompassDir lastMoveDir = getLastMoveDir(history);
-			if (null == lastMoveDir) {
-				lastMoveDir = getSelectedDir();
-			}
-			boolean fail = false;
-			switch(getSelectedDir()) {
-			case NORTHEAST: case NORTHWEST: case SOUTHEAST: case SOUTHWEST:
-				fail = true;
-				break;
-			default:
-				drawDir = transitions.get(lastMoveDir).get(getSelectedDir());
-			}
-//			log.debug("Draw Direction" + drawDir);
-			if (! fail) {
-				getLayer().get(this.getOldPos().getColumn(), this.getOldPos().getRow()).setFg(LanternaAdapter.toAwtColor(getNewFg()));
-				getLayer().get(this.getOldPos().getColumn(), this.getOldPos().getRow()).setBg(LanternaAdapter.toAwtColor(getNewBg()));
-				getLayer().get(this.getOldPos().getColumn(), this.getOldPos().getRow()).setCharacter(getBrush().get(drawDir));
-				this.setNewPos(new TerminalPosition(
-						Math.min(Math.max(getOldPos().getColumn() + moveDir.getDeltaX(), 0), getLayer().getWidth() - 1),
-						Math.min(Math.max(getOldPos().getRow() + moveDir.getDeltaY(), 0), getLayer().getHeight() - 1)));
-				history.addFirst(this);
-			}
-		}
 
-		public CharacterBoxBrush getBrush() {
-			return brush;
-		}
+	private static final Logger log = LoggerFactory.getLogger(DirectedDrawAction.class);
 
-		public void setBrush(CharacterBoxBrush brush) {
-			this.brush = brush;
-		}
+	private CharacterBoxBrush brush = CharacterBoxBrush.BOX_LIGHT;
+	private CompassDir selectedDir;
+	CompassDir moveDir;
+	private static Map<CompassDir,Map<CompassDir,CompassDir>> transitions = new HashMap<>();
 
-		public CompassDir getSelectedDir() {
-			return selectedDir;
+	/*
+	 * Sets up the transitions that define what character is drawn depending on
+	 * the previous drawing direction
+	 */
+	static {
+		for (CompassDir curDir : CompassDir.values()) {
+			transitions.put(curDir, new HashMap<CompassDir,CompassDir>());
 		}
+		transitions.get(CompassDir.NORTH).put(CompassDir.NORTH, CompassDir.EAST);
+		transitions.get(CompassDir.NORTH).put(CompassDir.EAST, CompassDir.NORTHWEST);
+		transitions.get(CompassDir.NORTH).put(CompassDir.SOUTH, CompassDir.EAST);
+		transitions.get(CompassDir.NORTH).put(CompassDir.WEST, CompassDir.NORTHEAST);
+		transitions.get(CompassDir.EAST).put(CompassDir.NORTH, CompassDir.SOUTHEAST);
+		transitions.get(CompassDir.EAST).put(CompassDir.EAST, CompassDir.SOUTH);
+		transitions.get(CompassDir.EAST).put(CompassDir.SOUTH, CompassDir.NORTHEAST);
+		transitions.get(CompassDir.EAST).put(CompassDir.WEST, CompassDir.SOUTH);
+		transitions.get(CompassDir.SOUTH).put(CompassDir.NORTH, CompassDir.EAST);
+		transitions.get(CompassDir.SOUTH).put(CompassDir.EAST, CompassDir.SOUTHWEST);
+		transitions.get(CompassDir.SOUTH).put(CompassDir.SOUTH, CompassDir.EAST);
+		transitions.get(CompassDir.SOUTH).put(CompassDir.WEST, CompassDir.SOUTHEAST);
+		transitions.get(CompassDir.WEST).put(CompassDir.NORTH, CompassDir.SOUTHWEST);
+		transitions.get(CompassDir.WEST).put(CompassDir.EAST, CompassDir.SOUTH);
+		transitions.get(CompassDir.WEST).put(CompassDir.SOUTH, CompassDir.NORTHWEST);
+		transitions.get(CompassDir.WEST).put(CompassDir.WEST, CompassDir.SOUTH);
 
-		public void setSelectedDir(CompassDir selectedDir) {
-			this.selectedDir = selectedDir;
+	}
+
+	public void execute(TMEditor applicationState) {
+		super.execute(applicationState);
+		Preconditions.checkNotNull(getSelectedDir());
+		this.moveDir = getSelectedDir();
+		CompassDir lastMoveDir = getLastMoveDir(applicationState);
+		if (null == lastMoveDir) {
+			lastMoveDir = getSelectedDir();
+		}
+		boolean fail = false;
+		switch(getSelectedDir()) {
+		case NORTHEAST: case NORTHWEST: case SOUTHEAST: case SOUTHWEST:
+			log.error("Not yet(?) supported.");
+			fail = true;
+			break;
+		default:
+			CompassDir drawDir = transitions.get(lastMoveDir).get(getSelectedDir());
+			getDrawChar().setCharacter(getBrush().get(drawDir));
+			if (isTransparent())
+				getDrawChar().setTransparent();
+			break;
+		}
+		if (! fail) {
+			// TODO
+			//				log.debug("Old Char: " + this.getOldChar());
+			log.debug("Draw Char: " + this.getDrawChar());
+			getLayer().set(this.getOldPos().getColumn(), this.getOldPos().getRow(), this.getDrawChar());
+			this.setNewPos(new TerminalPosition(
+					Math.min(Math.max(getOldPos().getColumn() + moveDir.getDeltaX(), 0), getLayer().getWidth() - 1),
+					Math.min(Math.max(getOldPos().getRow() + moveDir.getDeltaY(), 0), getLayer().getHeight() - 1)));
+			applicationState.getDrawHistory().addFirst(this);
 		}
 	}
+
+	public CharacterBoxBrush getBrush() {
+		return brush;
+	}
+
+	public void setBrush(CharacterBoxBrush brush) {
+		this.brush = brush;
+	}
+
+	public CompassDir getSelectedDir() {
+		return selectedDir;
+	}
+
+	public void setSelectedDir(CompassDir selectedDir) {
+		this.selectedDir = selectedDir;
+	}
+}

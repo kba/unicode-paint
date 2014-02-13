@@ -8,6 +8,12 @@ import unicode.UCC_BlockElements;
 import unicode.UCC_GeometricShapes;
 import unicode.UCC_MiscellaneousSymbols;
 
+/**
+ * Selection of common sets of related unicode characters.
+ * 
+ * @deprecated this must be replaced with somethin resource based and configurable
+ *
+ */
 public enum CharPalette {
 	//	♠♥♦♣♤♡♢♧
 	CARD_SUITS(

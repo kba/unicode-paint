@@ -3,11 +3,11 @@ package kba.unicodeart.gui;
 import com.googlecode.lanterna.gui.Theme;
 import com.googlecode.lanterna.terminal.TextColor;
 
-public class KbaEditorTheme extends Theme {
+public class TMLanternaGuiTheme extends Theme {
     private static final Definition DEFAULT = new Definition(TextColor.ANSI.WHITE, TextColor.ANSI.BLACK, false);
     private static final Definition SELECTED = new Definition(TextColor.ANSI.YELLOW, TextColor.ANSI.BLACK, true);
 	
-	public KbaEditorTheme() {
+	public TMLanternaGuiTheme() {
         setDefinition(Category.DIALOG_AREA, DEFAULT);
         setDefinition(Category.SCREEN_BACKGROUND, new Definition(TextColor.ANSI.CYAN, TextColor.ANSI.BLUE, true));
         setDefinition(Category.SHADOW, new Definition(TextColor.ANSI.BLACK, TextColor.ANSI.BLACK, true));
