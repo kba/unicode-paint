@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>kba</groupId>
-  <artifactId>kba-asciieditor</artifactId>
+  <artifactId>unicode-paint</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
