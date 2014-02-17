@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -75,8 +74,7 @@ public class TMEditFormatLayer {
 	//
 	
 	public TMEditFormatLayer(String name, int width, int height, String defaultLegendValue) {
-		this(name, width, height, defaultLegendValue,
-				TMColorPalette.DEFAULT_PALETTE);
+		this(name, width, height, defaultLegendValue, StandardPalette.DEFAULT.palette());
 	}
 
 	/**
@@ -91,7 +89,7 @@ public class TMEditFormatLayer {
 		this.width = width;
 		this.height = height;
 		this.defaultLegendValue = (null != defaultLegendValue) ? defaultLegendValue : GLOBAL_DEFAULT_LEGEND_VALUE;
-		this.palette = (null != palette) ? palette : TMColorPalette.DEFAULT_PALETTE;
+		this.palette = (null != palette) ? palette : StandardPalette.DEFAULT.palette();
 		this.charMap = new TMColoredCharacter[height][width];
 		this.colorCharFactory = new TMColoredCharacterFactory(this.palette);
 		setupEmpty();
@@ -102,7 +100,7 @@ public class TMEditFormatLayer {
 	 * @param height the height of the layer in characters
 	 */
 	public TMEditFormatLayer(int width, int height) {
-		this("", width, height, null, null);
+		this(null, width, height, null, null);
 	}
 
 	//
@@ -181,7 +179,7 @@ public class TMEditFormatLayer {
 	}
 
 	//
-	// Serialization / Deserialization
+	// Deserialization
 	//
 	
 	/**
@@ -196,54 +194,60 @@ public class TMEditFormatLayer {
 
 		TMEditFormatLayer newLayer = new TMEditFormatLayer(width, height);
 
-		TMXmlElements currentElement = TMXmlElements.Layer;
+		if (! xml.isStartElement()) {
+			log.error("Must be start element");
+			return null;
+		}
+
+		TMXmlElements currentElement = TMXmlElements.fromXmlName(xml.getLocalName());
+
+		if (TMXmlElements.Layer != currentElement) {
+			log.error ("Start tag must be 'Layer'");
+		}
+		for (int i = 0; i < xml.getAttributeCount(); i++) {
+			if ("name".equals(xml.getAttributeLocalName(i))) {
+				newLayer.setName(xml.getAttributeValue(i));
+			}
+		}
 
 		PARSE_LOOP: while (xml.hasNext()) {
 			int next = xml.next();
 			log.trace("Current event: " + next);
-			switch (next) {
-			case XMLStreamConstants.CHARACTERS:
-			case XMLStreamConstants.CDATA:
+
+			if (xml.isStartElement()) {
+				currentElement = TMXmlElements.fromXmlName(xml.getLocalName());
+				log.trace("START: " + currentElement.getXmlName());
+			} else if (xml.isCharacters()) {
+				// TODO trim leading/trailing whitespace
 				String text = xml.getText().replaceAll("\n", "");
 				if (xml.isWhiteSpace()) {
 					continue;
 				}
+				log.debug(currentElement.getXmlName());
 				switch (currentElement) {
 				case Character:
 					newLayer.parseCharString(text);
 					break;
-				case Background:
-				case Foreground:
-					newLayer.parseColorString(text,
-							currentElement == TMXmlElements.Background);
+				case Background: case Foreground:
+					newLayer.parseColorString(text, currentElement == TMXmlElements.Background);
+					break;
+				case Transparency:
+					newLayer.parseTransparencyString(text);
 					break;
 				default:
 					log.error("Unhandled CDATA for element " + currentElement);
 					break;
 				}
-				break;
-			case XMLStreamConstants.END_ELEMENT:
-				if (xml.getLocalName().equals(TMXmlElements.Layer))
+			} else if (xml.isEndElement()) {
+				log.debug("END: " + xml.getLocalName());
+				if (xml.getLocalName().equals(TMXmlElements.Layer.getXmlName())) {
+					log.debug("WE'RE DONE WITH THIS LAYER.");
 					break PARSE_LOOP;
-				break;
-			case XMLStreamConstants.START_ELEMENT:
-				currentElement = TMXmlElements.valueOf(xml.getLocalName());
-				log.trace("Current element " + currentElement);
-				switch (currentElement) {
-				case Layer:
-					// TODO Weird, should propbably loop indexes
-					if (xml.getAttributeLocalName(0).equals("name"))
-						newLayer.setName(xml.getAttributeValue(0));
-					break;
-				default:
-					break;
 				}
-				break;
-			default:
-				if (xml.isCharacters() && !xml.isWhiteSpace()) {
-					log.error("Unhandled characters event? " + xml.getText());
-				}
+			} else {
+				log.error("Unhandled event: " + xml.getEventType());
 			}
+
 		}
 
 		return newLayer;
@@ -257,6 +261,7 @@ public class TMEditFormatLayer {
 	 */
 	private void parseCharString(String charData) {
 		char[] asChars = charData.toCharArray();
+		log.debug("Parsing <Characters>: '" + charData.substring(0, 10) +"...'.");
 		// log.debug(new String(asChars));
 		// log.debug("LENGTH : " + asChars.length);
 		for (int y = 0; y < height; y++) {
@@ -274,11 +279,26 @@ public class TMEditFormatLayer {
 	 */
 	private void parseColorString(String colorData, boolean parseAsBackground) {
 		char[] asChars = colorData.toCharArray();
+		if (parseAsBackground) {
+			log.debug("Parsing <Background>: '" + colorData.substring(0, 10) +"...'.");
+		} else {
+			log.debug("Parsing <Foreground>: '" + colorData.substring(0, 10) +"...'.");
+		}
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
 				TMColoredCharacter cChar = this.get(x, y);
-				Color color = this.palette
-						.getColorByChar(asChars[width * y + x]);
+				char ch = asChars[width * y + x];
+				Color color;
+				if (ch == TMColoredCharacter.TRANSPARENT.getCharacter()) {
+					color = (parseAsBackground) 
+							? TMColoredCharacter.TRANSPARENT.getBg()
+							: TMColoredCharacter.TRANSPARENT.getFg();
+				} else {
+					color = this.palette.getColorByChar(ch);
+				}
+				if (null == color) {
+					log.error("No color for char '{}'", ch);
+				}
 				if (parseAsBackground)
 					cChar.setBg(color);
 				else
@@ -287,7 +307,23 @@ public class TMEditFormatLayer {
 		}
 	}
 
+	private void parseTransparencyString(String data) {
+		char[] asChars = data.toCharArray();
+		log.debug("Parsing <Background>: '" + data.substring(0, 10) +"...'.");
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				TMColoredCharacter cChar = this.get(x, y);
+				if (asChars[width * y + x] == '1') {
+					cChar.setTransparent();
+				}
+			}
+		}
+	}
+	//
+	// Serialization
 	// TODO adapt to new palette system
+	//
+
 	/**
 	 * @param xml the {@link XMLStreamWriter} to write to
 	 * @throws XMLStreamException
@@ -327,7 +363,6 @@ public class TMEditFormatLayer {
 	 * @throws XMLStreamException
 	 */
 	protected void exportMapToXML(XMLStreamWriter xml) throws XMLStreamException {
-		xml.writeCharacters("\n");
 		StringBuilder sb = new StringBuilder();
 		sb.append("\n");
 		for (int y = 0; y < height; y++) {
@@ -376,6 +411,7 @@ public class TMEditFormatLayer {
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
 				Color color = exportBg ? get(x, y).getBg() : get(x, y).getFg();
+				log.trace(String.format("%s At %s/%s: %s", (exportBg ? "Background" : "Foreground"), x, y, color));
 				sb.append(palette.getCharByColor(color));
 			}
 			if (y < height - 1)

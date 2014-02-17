@@ -1,11 +1,16 @@
 package kba.unicodeart.format;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javax.xml.stream.FactoryConfigurationError;
+import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.slf4j.Logger;
@@ -28,7 +33,7 @@ public class TMEditFormat {
 
 	private int height = DEFAULT_HEIGHT;
 	private int width = DEFAULT_WIDTH;
-	private TMColorPalette palette = TMColorPalette.DEFAULT_PALETTE;
+	private TMColorPalette palette = StandardPalette.DEFAULT.palette();
 	private TMEditFormatOptions options = TMEditFormatOptions.DEFAULT_OPTIONS;
 
 	private String name;
@@ -43,6 +48,10 @@ public class TMEditFormat {
 
 	public TMColorPalette getPalette() {
 		return palette;
+	}
+
+	public void setPalette(TMColorPalette palette) {
+		this.palette = palette;
 	}
 
 	public TMEditFormat(String name, int width, int height) {
@@ -86,10 +95,11 @@ public class TMEditFormat {
 	public void writeXML(XMLStreamWriter xml) throws XMLStreamException {
 		xml.writeStartDocument();
 		xml.writeCharacters("\n");
-		xml.writeStartElement("tilemap");
+		xml.writeStartElement(TMXmlElements.Tilemap.getXmlName());
 		xml.writeAttribute("width", String.valueOf(getWidth()));
 		xml.writeAttribute("height", String.valueOf(getHeight()));
-		xml.writeStartElement("layers");
+		palette.writeXML(xml);
+		xml.writeStartElement(TMXmlElements.Layers.getXmlName());
 		xml.writeCharacters("\n");
 		for (TMEditFormatLayer layer : getLayers()) {
 			layer.writeXML(xml);
@@ -98,7 +108,53 @@ public class TMEditFormat {
 		xml.writeEndElement();
 	}
 	
-	// TODO fromXML
+	public static TMEditFormat readXML(XMLStreamReader xml) throws XMLStreamException {
+		String newName = "Untitled";
+		int newWidth = 0;
+		int newHeight = 0;
+		TMEditFormat newMap = null;
+
+		while (xml.hasNext()) {
+			int next = xml.next();
+			if (xml.isStartElement()) {
+				if (TMXmlElements.Tilemap.getXmlName().equals(xml.getLocalName())) {
+					log.debug("Number of attrs: " + xml.getAttributeCount());
+					for (int i = 0 ; i<xml.getAttributeCount() ; i++) {
+						log.debug(xml.getAttributeLocalName(i));
+						switch(xml.getAttributeLocalName(i)) {
+						case "height":
+							newHeight = Integer.parseInt(xml.getAttributeValue(i));
+							break;
+						case "width":
+							newWidth = Integer.parseInt(xml.getAttributeValue(i));
+							break;
+						case "name":
+							newName = xml.getAttributeValue(i);
+							break;
+						default:
+							log.error("Unknown attribute " + xml.getAttributeValue(i));
+							break;
+						}
+					}
+					if (newWidth > 0 && newHeight > 0) {
+						newMap = new TMEditFormat(newName, newWidth, newHeight);
+					} else {
+						log.error("width or height are 0");
+					}
+				} else if (TMXmlElements.Palette.getXmlName().equals(xml.getLocalName())) {
+					TMColorPalette newPalette = TMColorPalette.readXML(xml);
+					newMap.setPalette(newPalette);
+				} else if (TMXmlElements.Layer.getXmlName().equals(xml.getLocalName())) {
+					log.debug("Layer #{}", newMap.getLayers().size());
+					TMEditFormatLayer newLayer = TMEditFormatLayer.fromXML(newWidth, newHeight, xml);
+					newMap.addLayer(newLayer);
+				}
+			}
+		}
+		return newMap;
+	}
+
+
 
 	/*
 	 * ==> Layers <==
@@ -113,10 +169,19 @@ public class TMEditFormat {
 	}
 
 	public void addLayer(String layerName, TMEditFormatLayer layer) {
-		Preconditions.checkArgument( ! this.layers.containsKey(layerName), "Layer with this name already exists.");
+		Preconditions.checkArgument( ! this.layers.containsKey(layerName), "Layer with this name ('" + layerName +"') already exists.");
 		this.layers.put(layerName, layer);
 	}
 
+	private void addLayer(TMEditFormatLayer newLayer) {
+		// TODO warn if it exists
+		String newLayerName = newLayer.getName();
+		if (null != getLayerByName(newLayerName)) {
+			log.error("Layer {} already exists.", newLayerName);
+		}
+		addLayer(newLayerName, newLayer);
+	}
+		
 	public String getNextLayerName(String layerName) {
 		boolean returnNext = false;
 		String retLayerName = null;
@@ -172,5 +237,14 @@ public class TMEditFormat {
 
 	public String getName() {
 		return name;
+	}
+
+	public String dumpXML() throws XMLStreamException, FactoryConfigurationError, IOException {
+		StringWriter sw = new StringWriter();
+		XMLStreamWriter xml = XMLOutputFactory.newInstance().createXMLStreamWriter(sw);
+		this.writeXML(xml);
+		xml.close();
+		sw.close();
+		return sw.toString();
 	}
 }
