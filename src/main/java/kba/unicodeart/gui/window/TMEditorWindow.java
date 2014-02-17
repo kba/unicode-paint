@@ -25,59 +25,25 @@ public class TMEditorWindow extends Window {
 	private static final Logger log = LoggerFactory.getLogger(TMEditorWindow.class);
 
 	private TMEditor applicationState;
+
+	//
+	// The widgets
+	//
+
 	/**
 	 * Panel on the right side with all the tools as subpanels
 	 */
 	private TMEditorToolPanel toolPanel;
+
 	/**
 	 * The map display and edit component
 	 */
 	private TMMapEditorComponent mapEditComponent;
+
 	/**
 	 * The status bar
 	 */
 	private TMStatusBarPanel statusBarPanel;
-
-	/**
-	 * @return the state of the application
-	 */
-	public TMEditor getApplicationState() {
-		return applicationState;
-	}
-
-	/**
-	 * @return the tool panel
-	 */
-	public TMEditorToolPanel getToolPanel() {
-		return toolPanel;
-	}
-
-	/**
-	 * @return the map display and edit component 
-	 */
-	public TMMapEditorComponent getMapEditComponent() {
-		return mapEditComponent;
-	}
-
-	/**
-	 * @return the status bar panel
-	 */
-	public TMStatusBarPanel getStatusBarPanel() {
-		return statusBarPanel;
-	}
-
-	private TMEditorWindow(String title) {
-		super(title);
-	}
-
-	/**
-	 * @param editor the initial state of the application
-	 */
-	public TMEditorWindow(TMEditor editor) {
-		this("TMEditor");
-		this.applicationState = editor;
-		setupGUI();
-	}
 
 	/**
 	 * Sets up all the GUI components inside the window.
@@ -111,13 +77,59 @@ public class TMEditorWindow extends Window {
 	}
 
 	/**
-	 * Draw a message by writing it to the status bar
-	 * @param text the text to draw
+	 * @return the state of the application
 	 */
-	public void drawMsg(String text) {
-		getStatusBarPanel().getMsgLabel().setText(text);
+	public TMEditor getApplicationState() {
+		return applicationState;
 	}
 
+
+	/**
+	 * @return the tool panel
+	 */
+	public TMEditorToolPanel getToolPanel() {
+		return toolPanel;
+	}
+
+
+	/**
+	 * @return the map display and edit component 
+	 */
+	public TMMapEditorComponent getMapEditComponent() {
+		return mapEditComponent;
+	}
+
+
+	/**
+	 * @return the status bar panel
+	 */
+	public TMStatusBarPanel getStatusBarPanel() {
+		return statusBarPanel;
+	}
+
+	//
+	// Constructors
+	//
+
+	/**
+	 * The inherited constructor is hidden.
+	 */
+	private TMEditorWindow(String title) {
+		super(title);
+	}
+
+	/**
+	 * @param editor the initial state of the application
+	 */
+	public TMEditorWindow(TMEditor editor) {
+		this("TMEditor");
+		this.applicationState = editor;
+		setupGUI();
+	}
+
+	//
+	// Keyboard Input
+	//
 	/* (non-Javadoc)
 	 * @see com.googlecode.lanterna.gui.Window#onKeyPressed(com.googlecode.lanterna.input.Key)
 	 */
@@ -151,5 +163,21 @@ public class TMEditorWindow extends Window {
 		// }
 		super.onKeyPressed(key);
 	}
+	
+	
+	//
+	// Helpers
+	//
+
+
+
+	/**
+	 * Draw a message by writing it to the status bar
+	 * @param text the text to draw
+	 */
+	public void drawMsg(String text) {
+		getStatusBarPanel().getMsgLabel().setText(text);
+	}
+
 
 }

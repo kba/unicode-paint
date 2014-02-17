@@ -32,6 +32,7 @@ import com.google.common.io.Resources;
 import com.googlecode.lanterna.TerminalFacade;
 import com.googlecode.lanterna.gui.DefaultBackgroundRenderer;
 import com.googlecode.lanterna.gui.GUIScreen;
+import com.googlecode.lanterna.terminal.TerminalPosition;
 import com.googlecode.lanterna.terminal.TextColor;
 import com.googlecode.lanterna.terminal.swing.SwingTerminal;
 import com.googlecode.lanterna.terminal.swing.TerminalAppearance;
@@ -64,14 +65,12 @@ public class TMEditor implements Runnable {
 	private TMEditFormat currentMap;
 	private TMColoredCharacterFactory colorCharFactory;
 	private TMEditFormatLayer currentLayer;
-	private MapEditorMode currentMode = MapEditorMode.CHAR_DRAW;
 	private CharPalette currentCharPalette = CharPalette.CARD_SUITS; 	// TODO a enum isn't flexible enough
 	private char currentChar;
 
 	private int backgroundColorIndex;
 	private int foregroundColorIndex;
 	private boolean transparent = false;
-	private int currentCharacterBoxBrushIndex;
 
 	public TMEditor() throws FontFormatException, IOException {
 		setupFonts();
@@ -118,17 +117,60 @@ public class TMEditor implements Runnable {
 		fallbackFonts[1] = arial;
 	}
 
+	//-------------
+	// Editor Modes
+	private MapEditorMode previousMode = MapEditorMode.CHAR_DRAW;
+	private MapEditorMode currentMode = MapEditorMode.CHAR_DRAW;
+
 	public enum MapEditorMode {
-		DIRECTIONAL_DRAW, CHAR_DRAW,
-		// SHOW_LEGEND,
-		// SELECT,
-		// MULTISELECT,
+		/**
+		 * Draw boxes by following hjkl-motion with appropriate characters
+		 */
+		DIRECTIONAL_DRAW,
+		/**
+		 * Use hjkl to move around screen, space to draw current char
+		 */
+		CHAR_DRAW,
+		/**
+		 * Select two points visually
+		 */
+		TWO_POINT_SELECT,
+		/**
+		 * A text-input like mode
+		 */
+//		TYPE_IN,
 		;
 		public MapEditorMode getNext() {
-			return values()[(ordinal() + 1) % values().length];
+			MapEditorMode next = values()[(ordinal() + 1) % values().length];
+//			if (next == TWO_POINT_SELECT) {
+//				next = getNext();
+//			}
+			return next;
 		}
 	}
 
+	public void setCurrentMode(MapEditorMode newMode) { 
+		this.previousMode = this.currentMode;
+		this.currentMode = newMode;
+	}
+
+	public MapEditorMode getCurrentMode() { return currentMode; }
+
+	public void cycleModes() {
+		this.previousMode = this.currentMode;
+		this.currentMode = this.currentMode.getNext();
+	}
+	private TerminalPosition firstPoint;
+	private TerminalPosition secondPoint;
+	public TerminalPosition getFirstPoint() { return firstPoint; }
+	public void setFirstPoint(TerminalPosition firstPoint) { this.firstPoint = firstPoint; }
+	public TerminalPosition getSecondPoint() { return secondPoint; }
+	public void setSecondPoint(TerminalPosition secondPoint) { this.secondPoint = secondPoint; }
+	public void resetPoints() { firstPoint = secondPoint = null; }
+
+	//------------
+	// Box Brushes
+	private int currentCharacterBoxBrushIndex;
 	public CharacterBoxBrush getCurrentCharacterBoxBrush() {
 		return getCharacterBoxBrushList().get(currentCharacterBoxBrushIndex);
 	}
@@ -145,8 +187,6 @@ public class TMEditor implements Runnable {
 	}
 
 	public TMEditFormat getCurrentMap() { return currentMap; }
-
-	public MapEditorMode getCurrentMode() { return currentMode; }
 
 	public CharPalette getCurPalette() { return this.getCurrentCharPalette(); }
 
@@ -238,10 +278,6 @@ public class TMEditor implements Runnable {
 		}
 		currentLayer = nextLayer;
 
-	}
-
-	public void cycleModes() {
-		this.currentMode = this.currentMode.getNext();
 	}
 
 	public void cycleBrushes() {

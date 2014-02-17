@@ -1,9 +1,12 @@
 package kba.unicodeart.gui;
 
+import java.awt.Point;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import kba.unicodeart.CompassDir;
+import kba.unicodeart.algo.BresenhamLine;
 import kba.unicodeart.format.TMLanternaAdapter;
 import kba.unicodeart.format.TMEditFormatLayer;
 import kba.unicodeart.format.colored_char.TMColoredCharacter;
@@ -27,6 +30,7 @@ import com.googlecode.lanterna.input.Key;
 import com.googlecode.lanterna.terminal.ACS;
 import com.googlecode.lanterna.terminal.TerminalPosition;
 import com.googlecode.lanterna.terminal.TerminalSize;
+import com.googlecode.lanterna.terminal.TextColor;
 
 /**
  * The map edit component
@@ -57,7 +61,10 @@ public class TMMapEditorComponent extends AbstractInteractableComponent {
 		// this.setHotspot(new TerminalPosition(3, 3));
 	}
 
+	//
 	// Repaint
+	//
+	
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -91,9 +98,24 @@ public class TMMapEditorComponent extends AbstractInteractableComponent {
 					// applicationState.getColorCharFactory().create(layer.get(mapX,
 					// mapY));
 					TMColoredCharacter colChar = layer.get(mapX, mapY);
-//					log.debug("colChar: " + colChar);
-					graphics.setForegroundColor(TMLanternaAdapter.toTextColor(colChar.getFg()));
-					graphics.setBackgroundColor(TMLanternaAdapter.toTextColor(colChar.getBg()));
+					boolean overrideChar = false;
+					if (null != applicationState.getFirstPoint()) {
+						if (mapX == applicationState.getFirstPoint().getColumn() && mapY == applicationState.getFirstPoint().getRow()) {
+							graphics.setForegroundColor(TextColor.ANSI.BLUE);
+							overrideChar = true;
+						}
+					}
+					if (applicationState.getSecondPoint() != null) {
+						if (mapX == applicationState.getSecondPoint().getColumn() && mapY == applicationState.getSecondPoint().getRow()) {
+							graphics.setForegroundColor(TextColor.ANSI.BLUE);
+							overrideChar = true;
+						}
+					}
+					if (! overrideChar) {
+						//					log.debug("colChar: " + colChar);
+						graphics.setForegroundColor(TMLanternaAdapter.toTextColor(colChar.getFg()));
+						graphics.setBackgroundColor(TMLanternaAdapter.toTextColor(colChar.getBg()));
+					}
 					graphics.drawString(mapX - mapOffsetX, mapY - mapOffsetY,
 							String.valueOf(colChar.getCharacter()));
 				}
@@ -165,7 +187,10 @@ public class TMMapEditorComponent extends AbstractInteractableComponent {
 				Math.min(applicationState.getCurrentMap().getHeight(), MAX_HEIGHT));
 	}
 
-	// Keyboard
+	//
+	// Keyboard Input
+	//
+	
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -196,6 +221,9 @@ public class TMMapEditorComponent extends AbstractInteractableComponent {
 		case CHAR_DRAW:
 			keyboardInteraction_CHAR_DRAW(key);
 			break;
+		case TWO_POINT_SELECT:
+			keyboardInteraction_TWO_POINT_SELECT(key);
+			break;
 		// case SHOW_LEGEND:
 		// break;
 		default:
@@ -205,6 +233,41 @@ public class TMMapEditorComponent extends AbstractInteractableComponent {
 
 		return Result.EVENT_HANDLED;
 		// return Result.NEXT_INTERACTABLE_DOWN;
+	}
+
+	private void keyboardInteraction_TWO_POINT_SELECT(Key key) {
+		if (key.equalsString("x")) {
+			deleteChar();
+		} else if (key.equalsString("<space>")) {
+			if (applicationState.getFirstPoint() == null) {
+				applicationState.setFirstPoint(cursorPosition);
+			} else if (applicationState.getSecondPoint() == null) {
+				applicationState.setSecondPoint(cursorPosition);
+			} else {
+				applicationState.resetPoints();
+			}
+		} else if (key.equalsString("<s-l>")) {
+			if (null != applicationState.getFirstPoint() && null != applicationState.getSecondPoint()) {
+				drawLine(applicationState.getFirstPoint(), applicationState.getSecondPoint());
+			}
+		} else if (key.equalsString("j")) {
+			moveCursor(CompassDir.SOUTH);
+		} else if (key.equalsString("k")) {
+			moveCursor(CompassDir.NORTH);
+		} else if (key.equalsString("h")) {
+			moveCursor(CompassDir.WEST);
+		} else if (key.equalsString("l")) {
+			moveCursor(CompassDir.EAST);
+		} else if (key.equalsString("n")) {
+			moveCursor(CompassDir.SOUTHWEST);
+		} else if (key.equalsString("m")) {
+			moveCursor(CompassDir.SOUTHEAST);
+		} else if (key.equalsString("u")) {
+			moveCursor(CompassDir.NORTHWEST);
+		} else if (key.equalsString("i")) {
+			moveCursor(CompassDir.NORTHEAST);
+		}
+		
 	}
 
 	private void keyboardInteraction_CHAR_DRAW(Key key) {
@@ -288,12 +351,13 @@ public class TMMapEditorComponent extends AbstractInteractableComponent {
 	}
 
 
+	//
 	// Map offset
+	//
 
 	private void setMapOffsetX(int mapOffsetX) {
 		this.mapOffsetX = mapOffsetX;
 	}
-
 
 	private void incMapOffsetX(int delta) {
 		int newOffsetX = this.mapOffsetX + mapOffsetX;
@@ -304,16 +368,13 @@ public class TMMapEditorComponent extends AbstractInteractableComponent {
 		this.mapOffsetX = newOffsetX;
 	}
 
-
 	private int getMapOffsetY() {
 		return mapOffsetY;
 	}
 
-
 	private void setMapOffsetY(int mapOffsetY) {
 		this.mapOffsetY = mapOffsetY;
 	}
-
 
 	private void incMapOffsetY(int delta) {
 		int newOffsetY = this.mapOffsetY + mapOffsetY;
@@ -323,7 +384,6 @@ public class TMMapEditorComponent extends AbstractInteractableComponent {
 			newOffsetY = 0;
 		this.mapOffsetY = newOffsetY;
 	}
-
 
 	/**
 	 * Undoes the last draw action.
@@ -539,4 +599,15 @@ public class TMMapEditorComponent extends AbstractInteractableComponent {
 				fillQueue.addLast(new TerminalPosition(posX, posY + 1));
 		}
 	}
+
+	
+	public void drawLine(TerminalPosition p0, TerminalPosition p1) {
+		List<Point> points = BresenhamLine.drawLine(p0.getColumn(), p0.getRow(), p1.getColumn(), p1.getRow());
+		for (Point p : points) {
+			TerminalPosition pos = new TerminalPosition(p.x, p.y);
+			cursorPosition = pos;
+			drawChar('X');
+		}
+	}
+
 }
