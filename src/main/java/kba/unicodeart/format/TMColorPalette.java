@@ -1,22 +1,19 @@
 package kba.unicodeart.format;
 
 import java.awt.Color;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
 import kba.unicodeart.format.colored_char.TMColoredCharacter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.googlecode.lanterna.terminal.swing.TerminalPalette;
 
 /**
  * A trimap of character, integer index and {@link Color}
@@ -25,75 +22,6 @@ import com.googlecode.lanterna.terminal.swing.TerminalPalette;
 public class TMColorPalette {
 	
 	private static final Logger log = LoggerFactory.getLogger(TMColorPalette.class);
-
-	public static final List<Character> DEFAULT_CHARACTER_INDEX;
-	static {
-		DEFAULT_CHARACTER_INDEX = new ArrayList<>();
-		String filename = "/character-index/default_mapping";
-		try {
-			InputStream is = TMColorPalette.class.getResource(filename).openStream();
-			try(BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
-				for(String line; (line = br.readLine()) != null; ) {
-					if (line.matches("^\\s*#.*")) continue;
-					if (! line.contains("\t")) continue;
-					String[] segs = line.split("\t");
-					if (segs.length < 3) {
-						throw new IllegalArgumentException("Invalid mapping line: " + line);
-					}
-					char ch = segs[1].charAt(0);
-					DEFAULT_CHARACTER_INDEX.add(ch);
-				}
-			}
-		} catch (IOException e) {
-			throw new RuntimeException("Couldn't locate or parse file " + filename);
-		}
-	}
-	public static final List<Color> TERM_88_COLORS=new ArrayList<>();
-	public static final List<Color> TERM_256_COLORS=new ArrayList<>();
-	static {
-		Map<String,List<Color>> mapToArr = new HashMap<>();
-		mapToArr.put("/terminal-colors/88colors-hex.txt", TERM_88_COLORS);
-		mapToArr.put("/terminal-colors/256colors-hex.txt", TERM_256_COLORS);
-		for (Entry<String, List<Color>> entry : mapToArr.entrySet()) {
-			String filename = entry.getKey();
-			List<Color> list = entry.getValue();
-			try {
-				InputStream is = TMColorPalette.class.getResource(filename).openStream();
-				try(BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
-					for(String line; (line = br.readLine()) != null; ) {
-						list.add(Color.decode(line));
-					}
-				}
-			} catch (IOException e) {
-				throw new RuntimeException("Couldn't locate or parse file " + filename);
-			}
-		}
-	}
-	public static final TMColorPalette GNOME_TERMINAL_88 = new TMColorPalette(
-			DEFAULT_CHARACTER_INDEX, TerminalPalette.GNOME_TERMINAL.asList(), TERM_88_COLORS);
-	public static final TMColorPalette GNOME_TERMINAL_256 = new TMColorPalette(
-			DEFAULT_CHARACTER_INDEX, TerminalPalette.GNOME_TERMINAL.asList(), TERM_256_COLORS);
-	public static final TMColorPalette STANDARD_VGA_88 = new TMColorPalette(
-			DEFAULT_CHARACTER_INDEX, TerminalPalette.STANDARD_VGA.asList(), TERM_88_COLORS);
-	public static final TMColorPalette STANDARD_VGA_256 = new TMColorPalette(
-			DEFAULT_CHARACTER_INDEX, TerminalPalette.STANDARD_VGA.asList(), TERM_256_COLORS);
-	public static final TMColorPalette WINDOWS_XP_COMMAND_PROMPT_88 = new TMColorPalette(
-			DEFAULT_CHARACTER_INDEX, TerminalPalette.WINDOWS_XP_COMMAND_PROMPT.asList(), TERM_88_COLORS);
-	public static final TMColorPalette WINDOWS_XP_COMMAND_PROMPT_256 = new TMColorPalette(
-			DEFAULT_CHARACTER_INDEX, TerminalPalette.WINDOWS_XP_COMMAND_PROMPT.asList(), TERM_256_COLORS);
-	public static final TMColorPalette MAC_OS_X_TERMINAL_APP_88 = new TMColorPalette(
-			DEFAULT_CHARACTER_INDEX, TerminalPalette.MAC_OS_X_TERMINAL_APP.asList(), TERM_88_COLORS);
-	public static final TMColorPalette MAC_OS_X_TERMINAL_APP_256 = new TMColorPalette(
-			DEFAULT_CHARACTER_INDEX, TerminalPalette.MAC_OS_X_TERMINAL_APP.asList(), TERM_256_COLORS);
-	public static final TMColorPalette PUTTY_88 = new TMColorPalette(
-			DEFAULT_CHARACTER_INDEX, TerminalPalette.PUTTY.asList(), TERM_88_COLORS);
-	public static final TMColorPalette PUTTY_256 = new TMColorPalette(
-			DEFAULT_CHARACTER_INDEX, TerminalPalette.PUTTY.asList(), TERM_256_COLORS);
-	public static final TMColorPalette XTERM_88 = new TMColorPalette(
-			DEFAULT_CHARACTER_INDEX, TerminalPalette.XTERM.asList(), TERM_88_COLORS);
-	public static final TMColorPalette XTERM_256 = new TMColorPalette(
-			DEFAULT_CHARACTER_INDEX, TerminalPalette.XTERM.asList(), TERM_256_COLORS);
-	public static final TMColorPalette DEFAULT_PALETTE = TMColorPalette.MAC_OS_X_TERMINAL_APP_256;
 
 	private final Map<Character,Integer> charToIndex = new HashMap<>();
 	private final Map<Color,Integer> colorToIndex = new HashMap<>();
@@ -108,9 +36,9 @@ public class TMColorPalette {
 
 	@SafeVarargs
 	public TMColorPalette(List<Color>... colorIndexes) {
-		this(DEFAULT_CHARACTER_INDEX, colorIndexes);
+		this(StandardCharacterIndex.DEFAULT.index(), colorIndexes);
 	}
-	
+
 	@SafeVarargs
 	public TMColorPalette(List<Character> characterIndex, List<Color>... colorLists) {
 		ArrayList<Color> colorList = new ArrayList<>();
@@ -131,7 +59,7 @@ public class TMColorPalette {
 		}
 	}
 
-	private List<Color> getColorIndex() { return colorIndex; }
+	public List<Color> getColorIndex() { return colorIndex; }
 
 	public char getCharByIndex(int index) { return charIndex.get(index); }
 
@@ -164,6 +92,9 @@ public class TMColorPalette {
 //		log.debug("Asking for Color " + color +". ");
 //		log.debug("Indexed as " + getIndexByColor(color) + ". ");
 		char ch = '␀'; // TODO Magic Number \u2400
+		if (null == color) {
+			log.error("COLOR IS NULL");
+		}
 		if (color.equals(TMColoredCharacter.TRANSPARENT.getFg()) || color.equals(TMColoredCharacter.TRANSPARENT.getBg())) {
 			return ch;
 		} else {
@@ -189,6 +120,88 @@ public class TMColorPalette {
 			log.debug("Exception!", e);
 		}
 		return colorIndex;
+	}
+	
+	public void writeXML(XMLStreamWriter xml) throws XMLStreamException {
+		writeXML(xml, false);
+	}
+
+	public void writeXML(XMLStreamWriter xml, boolean forceWriteout) throws XMLStreamException {
+		xml.writeStartElement(TMXmlElements.Palette.getXmlName());
+		StandardPalette matchingStandardPalette = null;
+		if (! forceWriteout) {
+			matchingStandardPalette = StandardPalette.findStandardPalette(this);
+		}
+		if (! forceWriteout && null != matchingStandardPalette) {
+			xml.writeAttribute("ref", matchingStandardPalette.name());
+		} else {
+			for (int i = 0 ; i < getColorIndex().size() ; i++) {
+				xml.writeStartElement(TMXmlElements.PaletteChar.getXmlName());
+				xml.writeAttribute("color", String.format("#%06X", (0xFFFFFF & getColorByIndex(i).getRGB())));
+				xml.writeAttribute("index", String.valueOf(i));
+				xml.writeCData(String.valueOf(getCharByIndex(i)));
+				xml.writeEndElement();
+				xml.writeCharacters("\n");
+			}
+		}
+		xml.writeEndElement();
+
+	}
+
+	public static TMColorPalette readXML(XMLStreamReader xml) throws XMLStreamException {
+		if (! xml.isStartElement()) {
+			log.error("Must be start element");
+		}
+		if (! TMXmlElements.Palette.getXmlName().equals(xml.getLocalName())) {
+			log.error("Must be start with <Palette>");
+		}
+		for (int i = 0; i < xml.getAttributeCount(); i++) {
+			String attrName = xml.getAttributeLocalName(i);
+			String attrValue = xml.getAttributeValue(i);
+			if ("ref".equals(attrName)) {
+				try {
+					StandardPalette sp = StandardPalette.valueOf(attrValue);
+					return sp.palette();
+				} catch (IllegalArgumentException e) {
+					log.error("Invalid palette name " + attrValue);
+				}
+			}
+		}
+		while (xml.hasNext()) {
+			// TODO Parse the palette
+		}
+		return null;
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((charIndex == null) ? 0 : charIndex.hashCode());
+		result = prime * result + ((colorIndex == null) ? 0 : colorIndex.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		TMColorPalette other = (TMColorPalette) obj;
+		if (charIndex == null) {
+			if (other.charIndex != null)
+				return false;
+		} else if (!charIndex.equals(other.charIndex))
+			return false;
+		if (colorIndex == null) {
+			if (other.colorIndex != null)
+				return false;
+		} else if (!colorIndex.equals(other.colorIndex))
+			return false;
+		return true;
 	}
 
 }
